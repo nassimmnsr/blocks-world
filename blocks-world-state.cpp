@@ -8,7 +8,6 @@ using namespace std;
 class State
 {
 public:
-
     State(int b, int s);
     // Constructor that creates a state with b blocs and s stacks
 
@@ -31,14 +30,14 @@ public:
     //               and !emptyStack(m.first)
     // Apply the doMove (m.first->m.second) to this
 
-    void getNeighbours(vector<State> path, vector<State>& neighbors);
+    void getNeighbours(vector<State> path, vector<State> &neighbors);
 
     void display() const;
     // Display this
 
     bool operator==(const State &) const;
 
-    int getNbStacks();
+    int getNbStacks() const;
     // Return the number of stacks
 
     bool emptyStack(int s);
@@ -48,16 +47,70 @@ public:
     ~State();
     // Destructor
 
-private:
+    int NbBlocsNotOnStack(int s) const;
 
+    int getNbBlocs() const;
+
+    int heuristicProf() const;
+
+private:
     int nbBlocs, nbStacks;
     int *stack; // For each bloc b: stack[b] = stack that contains b
     int *next;  // For each bloc b: if b is the lowest block of its stack,
     // then next[b]=-1, else next[b]=bloc immediately below b
-    int *top;   // For each stack s: if s is empty, then top[s]=-1
+    int *top; // For each stack s: if s is empty, then top[s]=-1
     // else top[s]=bloc on top of s
     bool equal(const int *, const int *, const int *) const; // compare states
 };
+
+int State::heuristicProf() const
+{
+    int sum = 0;
+    //  * If block is not on the last stack then +1
+    //  * If one of the blocks below the current block is bigger than the current block => +1
+    //  * If block is not well placed on the last stack +2
+
+    for (int i = 0; i < nbBlocs; i++)
+    {
+        if (stack[i] != nbStacks - 1)
+        {
+            sum++;
+            int j = i;
+            while (next[j] != -1)
+            {
+                if (next[j] > i)
+                {
+                    sum++;
+                    break;
+                }
+                j = next[j];
+            }
+        }
+        else if (stack[i] == nbStacks - 1)
+        {
+            int j = i;
+            while (next[j] != -1)
+            {
+                if (next[j] != j + 1)
+                {
+                    sum += 2;
+                    break;
+                }
+                j = next[j];
+            }
+            if (next[j] == -1 && j != nbBlocs - 1)
+            {
+                sum += 2;
+            }
+        }
+    }
+    return sum;
+}
+
+int State::getNbBlocs() const
+{
+    return nbBlocs;
+}
 
 State::State(int b, int s)
 {
@@ -98,7 +151,8 @@ State::~State()
 void State::setInitial()
 {
     // Initialise this with the initial state (blocs uniformly distributed)
-    for (int s = 0; s < nbStacks; s++) top[s] = -1;
+    for (int s = 0; s < nbStacks; s++)
+        top[s] = -1;
     for (int b = 0; b < nbBlocs; b++)
     {
         int s = b % nbStacks; // Put bloc b on top of stack s
@@ -114,15 +168,20 @@ bool State::isFinal()
     // largest to smallest)
     for (int s = 0; s < nbStacks - 1; s++)
     {
-        if (top[s] != -1) return false;
+        if (top[s] != -1)
+            return false;
     }
-    if (top[nbStacks - 1] != 0) return false;
+    if (top[nbStacks - 1] != 0)
+        return false;
     for (int b = 0; b < nbBlocs - 1; b++)
     {
-        if (stack[b] != nbStacks - 1) return false;
-        if (next[b] != b + 1) return false;
+        if (stack[b] != nbStacks - 1)
+            return false;
+        if (next[b] != b + 1)
+            return false;
     }
-    if (next[nbBlocs - 1] != -1) return false;
+    if (next[nbBlocs - 1] != -1)
+        return false;
     return true;
 }
 
@@ -161,7 +220,7 @@ void State::display() const
     }
 }
 
-int State::getNbStacks()
+int State::getNbStacks() const
 {
     return nbStacks;
 }
@@ -179,21 +238,36 @@ bool State::operator==(const State &state) const
     return state.equal(stack, top, next);
 }
 
+int State::NbBlocsNotOnStack(int s) const
+{
+    // Return the number of blocs not on stack s
+    int nb = 0;
+    for (int b = 0; b < nbBlocs; b++)
+    {
+        if (stack[b] != s)
+            nb++;
+    }
+    return nb;
+}
+
 bool State::equal(const int *stack2, const int *top2, const int *next2) const
 {
     for (int b = 0; b < nbBlocs; b++)
     {
-        if (stack[b] != stack2[b]) return false;
-        if (next[b] != next2[b]) return false;
+        if (stack[b] != stack2[b])
+            return false;
+        if (next[b] != next2[b])
+            return false;
     }
     for (int s = 0; s < nbStacks; s++)
     {
-        if (top[s] != top2[s]) return false;
+        if (top[s] != top2[s])
+            return false;
     }
     return true;
 }
 
-void State::getNeighbours(vector<State> path, vector<State>& neighbors)
+void State::getNeighbours(vector<State> path, vector<State> &neighbors)
 {
     // Return the neighbours of this
     for (int s1 = 0; s1 < nbStacks; s1++)
@@ -215,7 +289,9 @@ void State::getNeighbours(vector<State> path, vector<State>& neighbors)
                     }
                 }
                 if (!found)
-                { neighbors.push_back(state); }
+                {
+                    neighbors.push_back(state);
+                }
             }
         }
     }

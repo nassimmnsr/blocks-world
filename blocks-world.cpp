@@ -18,8 +18,11 @@ using namespace std;
 //typedef vector<int> State;
 #include "blocks-world-state.cpp"
 
-// Heuristic 1 : nombre de blocs pas sur la dernière pile
 // Heuristic 1 : number of blocs not on the last stack
+// Heuristic 2 :
+//      * Si un bloc n'est pas sur la dernière pile +1
+//      * Si tous les blocs en dessous sont pas bien rangés => +1
+//      * Si un bloc n'est pas bien placé bloc n'est pas bien placé sur la dernière pile +2
 
 typedef pair<int, int> Move;
 
@@ -33,12 +36,21 @@ typedef function<int(const State &pos)> Heuristic;
 //    return x;
 //}
 
+
 int
 nullHeuristic(const State &b)
 {
     return 0;
 }
 
+// Number of blocs not on the last stack
+int heuristic1(const State &b) {
+    return b.NbBlocsNotOnStack(b.getNbStacks() - 1);
+}
+
+int heuristicProf(const State &b) {
+    return b.heuristicProf();
+}
 //int
 //nbmis( const State& b )
 //{
@@ -160,8 +172,8 @@ main()
 //    State b = {7,11,8,3,14,0,6,15,1,4,13,9,5,12,2,10};
     //State b = {4,8,3,2,0,7,6,5,1};
 
-    int nbStacks = 3;
-    int nbBlocs = 6;
+    int nbStacks = 4;
+    int nbBlocs = 20;
     State b = State(nbBlocs, nbStacks);
     b.setInitial();
 
@@ -169,7 +181,7 @@ main()
     int nbVisitedState = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
-    blocksWorld(b, nullHeuristic, bestPath, nbVisitedState);
+    blocksWorld(b, heuristicProf, bestPath, nbVisitedState);
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
     cout << "Elapsed time: " << elapsed.count() << " s\n";
